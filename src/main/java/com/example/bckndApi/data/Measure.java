@@ -10,6 +10,9 @@ import org.hibernate.annotations.Type;
 
 public class Measure {
 
+
+    private Long idSearch;
+
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;

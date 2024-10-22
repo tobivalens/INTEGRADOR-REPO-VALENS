@@ -17,9 +17,14 @@ public class MeasureController {
     @Autowired
     private MeasureRepository measureRepository;
 
+
+    private Measure lastMeasure=null;
+
+
     @PostMapping("measure")
     public ResponseEntity<?> addMeasure(@RequestBody Measure measure) {
             measureRepository.save(measure);
+            this.lastMeasure=measure;
             var response = new HashMap<String, String>();
             response.put("message", "Operación realizada");
             return ResponseEntity.status(200).body(response);
@@ -27,7 +32,6 @@ public class MeasureController {
 
     @GetMapping("evaluation/{id}")
     public ResponseEntity<?> getMeasureById(@PathVariable("id") long id) {
-
         var measure = measureRepository.findById(id);
         if(measure.isPresent()){
             return ResponseEntity.status(200).body(measure.get());
@@ -38,7 +42,14 @@ public class MeasureController {
         }
     }
 
-
-
-
+    @GetMapping("measureGetId")
+    public ResponseEntity<?> getIdMeasure() {
+        if (lastMeasure != null) {
+            return ResponseEntity.status(200).body(lastMeasure.getId());
+        } else {
+            var response = new HashMap<String, String>();
+            response.put("message", "No hay medidas disponibles");
+            return ResponseEntity.status(404).body(response);
+        }
+    }
 }
