@@ -8,7 +8,7 @@ import org.hibernate.annotations.Type;
 @Entity
 @Table(name = "measures")
 
-public class Measure {
+public class   Measure {
 
 
     private Long idSearch;
