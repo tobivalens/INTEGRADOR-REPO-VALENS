@@ -11,8 +11,6 @@ import org.hibernate.annotations.Type;
 public class Measure {
 
 
-    private Long idSearch;
-
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     private Long id;
@@ -21,6 +19,44 @@ public class Measure {
    @Column( columnDefinition = "jsonb")
     private Readings readings;
 
+   private State state;
+   private String comentary;
+   private TypeMeasure typeMeasure;
+   private String lastMedicneHour;
+
+    public String getLastMedicneHour() {
+        return lastMedicneHour;
+    }
+
+    public void setLastMedicneHour(String lastMedicneHour) {
+        this.lastMedicneHour = lastMedicneHour;
+    }
+
+
+
+    public State getState() {
+        return state;
+    }
+
+    public void setState(State state) {
+        this.state = state;
+    }
+
+    public String getComentary() {
+        return comentary;
+    }
+
+    public void setComentary(String comentary) {
+        this.comentary = comentary;
+    }
+
+    public TypeMeasure getTypeMeasure() {
+        return typeMeasure;
+    }
+
+    public void setTypeMeasure(TypeMeasure typeMeasure) {
+        this.typeMeasure = typeMeasure;
+    }
 
     public Readings getReadings() {
         return readings;

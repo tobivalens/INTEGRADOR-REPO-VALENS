@@ -3,8 +3,8 @@ package com.example.bckndApi.data;
 import jakarta.persistence.*;
 
 @Entity
-@Table(name ="users")
-public class User {
+@Table(name ="doctors")
+public class Doctor {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
     long id;
@@ -14,23 +14,19 @@ public class User {
     String email;
     String lastname;
     String cedula;
-    String disease;
-    String state;
     String password;
+    String phone;
 
+    public Doctor() {}
 
-    public User(long id, String name, String lastname, String email, String cedula, String disease,  String password) {
+    public Doctor(long id, String name, String lastname, String email, String cedula, String password, String phone) {
         this.id = id;
         this.name = name;
         this.email = email;
         this.lastname = lastname;
         this.cedula = cedula;
-        this.disease = disease;
         this.password = password;
-    }
-
-    public User(){
-
+        this.phone = phone;
     }
 
     public long getId() {
@@ -73,22 +69,6 @@ public class User {
         this.cedula = cedula;
     }
 
-    public String getDisease() {
-        return disease;
-    }
-
-    public void setDisease(String disease) {
-        this.disease = disease;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
-    }
-
     public String getPassword() {
         return password;
     }
@@ -97,4 +77,11 @@ public class User {
         this.password = password;
     }
 
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
 }
