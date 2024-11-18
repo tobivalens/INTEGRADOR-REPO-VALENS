@@ -4,13 +4,18 @@ import com.example.bckndApi.data.Admin;
 import com.example.bckndApi.data.Doctor;
 import com.example.bckndApi.repository.AdminRepository;
 import com.example.bckndApi.repository.DoctorRepository;
+import com.example.bckndApi.util.InvalidAuthException;
 import com.example.bckndApi.util.JwtUtil;
 import com.example.bckndApi.util.PasswordHasher;
+import io.jsonwebtoken.ExpiredJwtException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.Map;
+import java.util.Optional;
 
 @RestController
 @RequestMapping("admin")
@@ -23,7 +28,6 @@ public class AdminController {
     @Autowired
     private DoctorRepository doctorRepository;
 
-    // Login para administradores
     @PostMapping("login")
     public ResponseEntity<?> loginAdmin(@RequestBody Admin admin) {
         if ("user".equals(admin.getUsername()) && "password".equals(admin.getPassword())) {
@@ -41,81 +45,111 @@ public class AdminController {
     // Ver la lista de doctores
     @GetMapping("doctors/list")
     public ResponseEntity<?> listDoctors(@RequestHeader("Authorization") String authorization) {
-        if (authorization.startsWith("Bearer ")) {
-            var token = authorization.substring(7);
-            try {
-                JwtUtil.validateToken(token);
-                var doctors = doctorRepository.findAll();
-                return ResponseEntity.status(200).body(doctors);
-            } catch (Exception ex) {
-                return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
-            }
-        } else {
+        try {
+            JwtUtil.validateAuthorization(authorization);
+            var doctors = doctorRepository.findAll();
+            return ResponseEntity.status(200).body(doctors);
+        } catch (InvalidAuthException ex) {
             return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+        } catch (ExpiredJwtException exp) {
+            return ResponseEntity.status(401).body(Map.of("message", "Expired token"));
+        } catch (Exception ex) {
+            return ResponseEntity.status(401).body(Map.of("message", "Fallo genérico"));
         }
     }
 
     // Agregar un nuevo doctor
-    @PostMapping("doctors/add")
+    @PostMapping("/doctors/add")
     public ResponseEntity<?> addDoctor(@RequestHeader("Authorization") String authorization, @RequestBody Doctor doctor) {
         if (authorization.startsWith("Bearer ")) {
             var token = authorization.substring(7);
             try {
                 JwtUtil.validateToken(token);
+
+                // Validar que todos los campos del doctor estén presentes (puedes agregar más validaciones si es necesario)
+                if (doctor.getName() == null || doctor.getLastname() == null || doctor.getEmail() == null ||
+                        doctor.getCedula() == null || doctor.getPhone() == null) {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "All fields are required"));
+                }
+
                 doctorRepository.save(doctor);
-                return ResponseEntity.status(200).body(Map.of("message", "Doctor added successfully"));
+                return ResponseEntity.status(HttpStatus.OK).body(Map.of("message", "Doctor added successfully"));
             } catch (Exception ex) {
-                return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+                return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Unauthorized"));
             }
         } else {
-            return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Unauthorized"));
         }
     }
 
-    // Editar un doctor
-    @PutMapping("doctors/edit/{id}")
-    public ResponseEntity<?> editDoctor(@RequestHeader("Authorization") String authorization, @PathVariable long id, @RequestBody Doctor updatedDoctor) {
-        if (authorization.startsWith("Bearer ")) {
-            var token = authorization.substring(7);
-            try {
-                JwtUtil.validateToken(token);
-                var doctorOpt = doctorRepository.findById(id);
-                if (doctorOpt.isPresent()) {
-                    Doctor doctor = doctorOpt.get();
-                    doctor.setName(updatedDoctor.getName());
-                    doctor.setLastname(updatedDoctor.getLastname());
-                    doctor.setEmail(updatedDoctor.getEmail());
-                    doctor.setCedula(updatedDoctor.getCedula());
-                    doctorRepository.save(doctor);
-                    return ResponseEntity.status(200).body(Map.of("message", "Doctor updated successfully"));
-                }
-                return ResponseEntity.status(404).body(Map.of("message", "Doctor not found"));
-            } catch (Exception ex) {
-                return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+
+    @Transactional
+    @PutMapping("/doctors/update/{cedula}")
+    public ResponseEntity<?> updateDoctor(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable("cedula") String cedula,
+            @RequestBody Doctor updatedDoctorDetails) {
+
+        try {
+
+            JwtUtil.validateAuthorization(authorization);
+            Optional<Doctor> optionalDoctor = doctorRepository.findByCedula(cedula);
+
+            if (optionalDoctor.isPresent()) {
+                Doctor doctor = optionalDoctor.get();
+
+                doctor.setName(updatedDoctorDetails.getName());
+                doctor.setLastname(updatedDoctorDetails.getLastname());
+                doctor.setEmail(updatedDoctorDetails.getEmail());
+                doctor.setPhone(updatedDoctorDetails.getPhone());
+                doctor.setPassword(updatedDoctorDetails.getPassword());
+
+                doctorRepository.save(doctor);
+                return ResponseEntity.status(HttpStatus.OK).body("Doctor actualizado satisfactoriamente.");
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body("Doctor no encontrado.");
             }
-        } else {
-            return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+
+        } catch (InvalidAuthException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Unauthorized"));
+        } catch (ExpiredJwtException exp) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Expired token"));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "Fallo genérico"));
         }
     }
 
-    // Eliminar un doctor
-    @DeleteMapping("doctors/delete/{id}")
-    public ResponseEntity<?> deleteDoctor(@RequestHeader("Authorization") String authorization, @PathVariable long id) {
-        if (authorization.startsWith("Bearer ")) {
-            var token = authorization.substring(7);
-            try {
-                JwtUtil.validateToken(token);
-                var doctorOpt = doctorRepository.findById(id);
-                if (doctorOpt.isPresent()) {
-                    doctorRepository.deleteById(id);
-                    return ResponseEntity.status(200).body(Map.of("message", "Doctor deleted successfully"));
-                }
-                return ResponseEntity.status(404).body(Map.of("message", "Doctor not found"));
-            } catch (Exception ex) {
-                return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+
+    @Transactional
+    @DeleteMapping("/doctors/delete/{cedula}")
+    public ResponseEntity<?> deleteDoctor(
+            @RequestHeader("Authorization") String authorization,
+            @PathVariable("cedula") String cedula) {
+
+        try {
+            JwtUtil.validateAuthorization(authorization);
+            Optional<Doctor> doctor = doctorRepository.findByCedula(cedula);
+
+            if (doctor.isPresent()) {
+                doctorRepository.deleteByCedula(cedula);
+                return ResponseEntity.status(HttpStatus.OK)
+                        .body(Map.of("message", "Doctor eliminado satisfactoriamente."));
+            } else {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                        .body(Map.of("message", "Doctor no encontrado."));
             }
-        } else {
-            return ResponseEntity.status(401).body(Map.of("message", "Unauthorized"));
+
+        } catch (InvalidAuthException ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Unauthorized"));
+        } catch (ExpiredJwtException exp) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Expired token"));
+        } catch (Exception ex) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Map.of("message", "Fallo genérico"));
         }
     }
+
 }
+

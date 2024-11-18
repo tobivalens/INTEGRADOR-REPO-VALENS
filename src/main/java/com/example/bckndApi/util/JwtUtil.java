@@ -20,4 +20,14 @@ public class JwtUtil {
     public static void validateToken(String token) {
         Jwts.parser().setSigningKey(SECRET_KEY).parseClaimsJws(token);
     }
+
+    public static void validateAuthorization(String authorization) throws InvalidAuthException, ExpiredJwtException, UnsupportedJwtException, MalformedJwtException, SignatureException, IllegalArgumentException{
+        if (authorization.startsWith("Bearer ")) {
+            var token = authorization.substring(7);
+            JwtUtil.validateToken(token);
+        }else{
+            throw new InvalidAuthException("El header esta malo");
+        }
+    }
+
 }
