@@ -4,9 +4,13 @@ import com.example.bckndApi.data.*;
 import com.example.bckndApi.repository.MeasureRepository;
 import com.example.bckndApi.repository.UserRepository;
 import com.example.bckndApi.util.JwtUtil;
+import com.google.gson.Gson;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -15,7 +19,8 @@ import java.util.Optional;
 @RestController
 @CrossOrigin(maxAge = 3600)
 public class MeasureController {
-
+    @Autowired
+    RestTemplate restTemplate;
     @Autowired
     private MeasureRepository measureRepository;
 
@@ -127,4 +132,53 @@ public class MeasureController {
         }
         return false;
     }
+
+
+
+    @GetMapping("evaluation/{id}/fft")
+    public ResponseEntity<?> getEvaluationByFft(@PathVariable("id") long id){
+        HttpHeaders headers = new HttpHeaders();
+        var evaluation = measureRepository.findByid(id);
+        if (evaluation.isPresent()){
+            var readings = evaluation.get().getReadings();
+            var json = new Gson().toJson(readings);
+            headers.set("Content-Type", "application/json; UTF-8");
+            HttpEntity<String> request = new HttpEntity<>(json, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity("http://analitica:8000/fft",
+                    request,
+                    String.class
+            );
+            return ResponseEntity.status(200).
+                    header("contest-Type", "aplication/Json").
+                    body(response.getBody());
+        }else{
+            return ResponseEntity.status(404).body("la muestra no está");
+        }
+
+    }
+
+
+
+    @GetMapping("evaluation/{id}/autocorrelation")
+    public ResponseEntity<?> autocorrelation(@PathVariable("id") long id){
+        HttpHeaders headers = new HttpHeaders();
+        var evaluation = measureRepository.findByid(id);
+        if (evaluation.isPresent()){
+            var readings = evaluation.get().getReadings();
+            var json = new Gson().toJson(readings);
+            headers.set("Content-Type", "application/json; UTF-8");
+            HttpEntity<String> request = new HttpEntity<>(json, headers);
+            ResponseEntity<String> response = restTemplate.postForEntity("http://analitica:8000/autocorrelacion",
+                    request,
+                    String.class
+            );
+            return ResponseEntity.status(200).
+                    header("contest-Type", "aplication/Json").
+                    body(response.getBody());
+        }else{
+            return ResponseEntity.status(404).body("la muestra no está");
+        }
+
+    }
+
 }
