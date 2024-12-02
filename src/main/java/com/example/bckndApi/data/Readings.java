@@ -2,7 +2,6 @@ package com.example.bckndApi.data;
 
 import java.util.List;
 
-
 public class Readings {
 
     private List<Coordinate> accelerometer;

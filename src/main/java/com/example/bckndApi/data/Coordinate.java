@@ -1,11 +1,11 @@
 package com.example.bckndApi.data;
 
+
 public class Coordinate {
 
     double x;
     double y;
     double z;
-
     long timestamp;
 
     public long getTimestamp() {

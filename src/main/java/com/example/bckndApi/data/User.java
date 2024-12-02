@@ -1,36 +1,46 @@
 package com.example.bckndApi.data;
 
 import jakarta.persistence.*;
+import java.util.Date;
+import java.util.List;
+import java.util.ArrayList;
 
 @Entity
-@Table(name ="users")
+@Table(name = "users")
 public class User {
     @Id
     @GeneratedValue(strategy = GenerationType.AUTO)
-    long id;
+    private long id;
 
+    private String name;
+    private String email;
+    private String lastname;
+    private String cedula;
+    private String password;
+    private int age;
+    private Date birthday;
+    private Status status;
 
-    String name;
-    String email;
-    String lastname;
-    String cedula;
-    String disease;
-    String state;
-    String password;
+    private Diagnostic diagnostic;
 
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL)
+    private List<Measure> measures;
 
-    public User(long id, String name, String lastname, String email, String cedula, String disease,  String password) {
-        this.id = id;
+    public User(String name, String email, String lastname, String cedula, String password, int age, Date birthday, Diagnostic diagnostic) {
         this.name = name;
         this.email = email;
         this.lastname = lastname;
         this.cedula = cedula;
-        this.disease = disease;
         this.password = password;
+        this.age = age;
+        this.birthday = birthday;
+        this.status = Status.INGRESADO;
+        this.diagnostic = diagnostic;
+        this.measures = new ArrayList<>();
     }
 
-    public User(){
-
+    public User() {
+        this.measures = new ArrayList<>();
     }
 
     public long getId() {
@@ -65,28 +75,12 @@ public class User {
         this.lastname = lastname;
     }
 
-    public String getCedula() {
-        return cedula;
+    public int getAge() {
+        return age;
     }
 
-    public void setCedula(String cedula) {
-        this.cedula = cedula;
-    }
-
-    public String getDisease() {
-        return disease;
-    }
-
-    public void setDisease(String disease) {
-        this.disease = disease;
-    }
-
-    public String getState() {
-        return state;
-    }
-
-    public void setState(String state) {
-        this.state = state;
+    public void setAge(int age) {
+        this.age = age;
     }
 
     public String getPassword() {
@@ -97,4 +91,43 @@ public class User {
         this.password = password;
     }
 
+    public String getCedula() {
+        return cedula;
+    }
+
+    public void setCedula(String cedula) {
+        this.cedula = cedula;
+    }
+
+    public Date getBirthday() {
+        return birthday;
+    }
+
+    public void setBirthday(Date birthday) {
+        this.birthday = birthday;
+    }
+
+    public Status getStatus() {
+        return status;
+    }
+
+    public void setStatus(Status status) {
+        this.status = status;
+    }
+
+    public List<Measure> getMeasures() {
+        return measures;
+    }
+
+    public void setMeasures(List<Measure> measures) {
+        this.measures = measures;
+    }
+
+    public Diagnostic getDiagnostic() {
+        return diagnostic;
+    }
+
+    public void setDiagnostic(Diagnostic diagnostic) {
+        this.diagnostic = diagnostic;
+    }
 }
